@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.scratch/
+build/
+dist/
+*.spec
+# Never commit API keys or personal config.
+config.toml
+.env

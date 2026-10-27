@@ -1,0 +1,4 @@
+* text=auto
+# cmd.exe misreads batch files with Unix line endings.
+*.bat text eol=crlf
+*.ico binary

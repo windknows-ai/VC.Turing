@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>图灵浮窗</title>
+<style>
+  /* Registered so the state colours glide from one to the next instead of jumping. */
+  @property --hue-a { syntax: "<color>"; inherits: true; initial-value: #8fa6ff; }
+  @property --hue-b { syntax: "<color>"; inherits: true; initial-value: #3d5ce8; }
+  @property --hue-c { syntax: "<color>"; inherits: true; initial-value: #142273; }
+  @property --glow { syntax: "<color>"; inherits: true; initial-value: rgba(61, 92, 232, 0.55); }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  body { display: grid; place-items: center; cursor: grab; }
+  body:active { cursor: grabbing; }
+
+  .orb {
+    --level: 0;
+    --scale: 0.84;
+    position: relative;
+    width: 64px;
+    height: 64px;
+    transition: --hue-a 0.5s, --hue-b 0.5s, --hue-c 0.5s, --glow 0.5s;
+  }
+  .sphere, .ring, .ripple, .shadow { position: absolute; border-radius: 50%; }
+
+  /* Contact shadow on the "floor" under the ball: smaller and fainter as it lifts. */
+  .shadow {
+    left: 14px; right: 14px; bottom: -9px; height: 8px;
+    background: radial-gradient(closest-side, rgba(8, 14, 40, 0.42), rgba(8, 14, 40, 0));
+    transform: scaleX(calc(var(--scale) * 1.05 - var(--level) * 0.25));
+    opacity: calc(0.9 - var(--level) * 0.5);
+    transition: transform 0.14s ease-out, opacity 0.3s;
+  }
+
+  /* The ball: light from the top left, a dark terminator, and light bouncing back
+     into the lower right edge, so it reads as a lit glassy sphere. */
+  .sphere {
+    inset: 0;
+    background:
+      radial-gradient(circle at 70% 82%, color-mix(in srgb, var(--hue-a) 55%, transparent) 0%, transparent 34%),
+      radial-gradient(circle at 34% 28%, #ffffff 0%, var(--hue-a) 22%, var(--hue-b) 55%, var(--hue-c) 100%);
+    box-shadow:
+      inset -7px -9px 16px rgba(4, 8, 30, 0.45),
+      inset 3px 4px 8px rgba(255, 255, 255, 0.25),
+      0 0 calc(4px + var(--level) * 9px) var(--glow);
+    transform: scale(var(--scale));
+    transition: transform 0.14s ease-out, box-shadow 0.2s, filter 0.4s, opacity 0.4s;
+  }
+  /* Specular highlight and a faint window reflection. */
+  .sphere::before, .sphere::after { content: ""; position: absolute; border-radius: 50%; }
+  .sphere::before {
+    left: 17%; top: 11%; width: 34%; height: 22%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+    transform: rotate(-28deg);
+  }
+  .sphere::after {
+    right: 18%; top: 22%; width: 9%; height: 9%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+  }
+
+  .ring { inset: -5px; border: 2px solid var(--hue-b); opacity: 0; transition: opacity 0.3s; }
+  .ripple { inset: 0; border: 2px solid var(--hue-a); opacity: 0; }
+
+  /* States. Idle draws nothing that moves, so the GPU can rest. */
+  .orb[data-state="waiting"] { --scale: 0.84; }
+  .orb[data-state="loading"] { --scale: 0.8; }
+  .orb[data-state="stopped"] { --scale: 0.78; }
+  .orb[data-state="stopped"] .sphere { filter: grayscale(1) brightness(1.15); opacity: 0.55; }
+  .orb[data-state="loading"] .sphere { opacity: 0.75; }
+
+  .orb[data-state="listening"] {
+    --hue-a: #a8f0ff; --hue-b: #2f8cf0; --hue-c: #0b2a7a; --glow: rgba(47, 160, 240, 0.7);
+    --scale: calc(1 + var(--level) * 0.16);
+  }
+  .orb[data-state="listening"] .ring { opacity: 0.45; }
+
+  .orb[data-state="thinking"] {
+    --hue-a: #e0c8ff; --hue-b: #7b4ff0; --hue-c: #2a1470; --glow: rgba(123, 79, 240, 0.6);
+    --scale: 0.94;
+  }
+  .orb[data-state="thinking"] .ring,
+  .orb[data-state="loading"] .ring {
+    opacity: 0.9;
+    border-color: var(--hue-a) transparent var(--hue-b) transparent;
+  }
+
+  .orb[data-state="speaking"] {
+    --hue-a: #b8ffe6; --hue-b: #20b48a; --hue-c: #08503e; --glow: rgba(32, 180, 138, 0.6);
+    --scale: calc(0.95 + var(--level) * 0.18);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .orb[data-state="thinking"] .ring,
+    .orb[data-state="loading"] .ring { animation: spin 1s linear infinite; }
+    .orb[data-state="listening"] .ripple { animation: ripple 1.6s ease-out infinite; }
+    .orb[data-state="listening"] .ripple.second { animation-delay: 0.8s; }
+    /* The moment it hears its name: a quick hop. */
+    .orb.woken .sphere { animation: hop 0.45s cubic-bezier(.3, 1.6, .5, 1); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes ripple { from { transform: scale(1); opacity: 0.5; } to { transform: scale(1.45); opacity: 0; } }
+  @keyframes hop { 0% { transform: scale(0.84); } 45% { transform: scale(1.18) translateY(-5px); } 100% { transform: scale(1); } }
+</style>
+</head>
+<body>
+  <div class="orb" id="orb" data-state="loading" title="图灵：点一下打开，右键更多">
+    <span class="shadow"></span>
+    <span class="ripple"></span><span class="ripple second"></span>
+    <span class="ring"></span><span class="sphere"></span>
+  </div>
+<script src="i18n.js"></script>
+<script>
+  const orb = document.getElementById("orb");
+  const LIVELY = new Set(["listening", "speaking"]);  // states that follow the sound level
+  let last = 0;
+  let primed = false;  // the first poll returns old events; don't animate those
+  let down = null;
+
+  async function poll() {
+    let state = orb.dataset.state;
+    try {
+      const r = await window.pywebview.api.engine_status(last);
+      state = r.state;
+      orb.dataset.state = state;
+      // Only states that use the level get it, so an idle orb never repaints.
+      orb.style.setProperty("--level", LIVELY.has(state) ? r.level.toFixed(2) : "0");
+      for (const e of r.events) {
+        last = e.id;
+        if (e.kind === "wake" && primed) {
+          orb.classList.remove("woken");
+          void orb.offsetWidth;  // restart the hop animation
+          orb.classList.add("woken");
+        }
+      }
+      primed = true;
+    } catch (err) { /* window closing */ }
+    // Quick while it is listening or talking; slower when idle.
+    setTimeout(poll, LIVELY.has(state) ? 80 : 200);
+  }
+
+  // Tell a click (open Turing) from a drag (move the orb).
+  document.addEventListener("mousedown", (e) => { if (e.button === 0) down = [e.screenX, e.screenY]; });
+  document.addEventListener("mouseup", (e) => {
+    if (e.button !== 0 || !down) return;
+    const moved = Math.hypot(e.screenX - down[0], e.screenY - down[1]);
+    down = null;
+    if (moved < 4) window.pywebview.api.orb_clicked();
+    else window.pywebview.api.orb_moved();
+  });
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    window.pywebview.api.orb_menu();
+  });
+
+  function start() {
+    window.pywebview.api.ui_language().then(setLang);
+    poll();
+  }
+  if (window.pywebview && window.pywebview.api) start();
+  else window.addEventListener("pywebviewready", start);
+</script>
+</body>
+</html>

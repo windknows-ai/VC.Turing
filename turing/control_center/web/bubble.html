@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>图灵气泡</title>
+<style>
+  :root {
+    --panel: rgba(255, 255, 255, 0.97);
+    --ink: #18202b;
+    --muted: #5a6577;
+    --line: #d5dbe4;
+    --accent: #2d4fd0;
+    --sans: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --panel: rgba(30, 34, 42, 0.97); --ink: #e7ebf1; --muted: #9aa4b4; --line: #2e343e; --accent: #7d97ff; }
+  }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  body {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 6px 10px 8px 6px;
+    box-sizing: border-box;
+    font: 14px/1.55 var(--sans);
+    color: var(--ink);
+  }
+
+  /* A speech bubble whose tail points right, at the orb. */
+  .bubble {
+    position: relative;
+    box-sizing: border-box;
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    padding: 10px 4px 10px 14px;
+    border-radius: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 28px -12px rgba(15, 23, 48, 0.45);
+    cursor: default;
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    right: -7px;
+    bottom: 16px;
+    width: 12px;
+    height: 12px;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    border-top: 1px solid var(--line);
+    transform: rotate(45deg);
+  }
+  /* Orb on the left of the screen: bubble on its right, tail pointing left. */
+  body.right { justify-content: flex-start; padding: 6px 6px 8px 10px; }
+  body.right .bubble::after {
+    right: auto;
+    left: -7px;
+    border-right: 0;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  /* Scroll inside, so the tail (drawn outside the bubble) isn't clipped. */
+  .content { overflow-x: hidden; overflow-y: auto; padding-right: 10px; max-height: 100%; }
+  .you { margin: 0 0 4px; color: var(--muted); font-size: 12.5px; }
+  .reply { margin: 0; white-space: pre-wrap; }
+  .status { margin: 0; color: var(--muted); }
+
+  .menu { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+  .menu button {
+    text-align: left;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+  }
+  .menu button:hover { background: rgba(74, 108, 240, 0.12); }
+  .menu .quit { color: #c0303a; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bubble { animation: pop 0.18s ease-out; }
+  }
+  @keyframes pop { from { opacity: 0; transform: translateX(8px) scale(0.97); } }
+</style>
+</head>
+<body>
+  <div class="bubble" id="bubble" hidden></div>
+<script src="i18n.js"></script>
+<script>
+  const bubble = document.getElementById("bubble");
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  let liveTimer = null;
+
+  // While Turing listens, show the words heard so far. Stops by itself once it stops listening.
+  function followLive() {
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(async () => {
+      try {
+        const r = await window.pywebview.api.live_text();
+        const you = bubble.querySelector(".you");
+        if (r.text && you) { you.hidden = false; you.textContent = `你：${r.text}`; }
+        if (r.state === "listening") followLive();
+      } catch (e) { /* window closing */ }
+    }, 200);
+  }
+
+  // Called from Python. `view` is {you, reply, status, live} or {menu: {running}}.
+  function render(view) {
+    clearTimeout(liveTimer);
+    document.body.classList.toggle("right", view.side === "right");
+    if (view.menu) {
+      bubble.innerHTML = `<div class="menu">
+        <button data-act="open_main">打开图灵</button>
+        <button data-act="${view.menu.running ? "engine_stop" : "engine_start"}">
+          ${view.menu.running ? "暂停聆听" : "开始聆听"}</button>
+        <button data-act="open_ai">AI 连接</button>
+        <button class="quit" data-act="quit_app">退出图灵</button></div>`;
+      bubble.querySelectorAll("button").forEach((b) =>
+        b.addEventListener("click", () => { window.pywebview.api[b.dataset.act](); window.pywebview.api.bubble_close(); }));
+    } else {
+      bubble.innerHTML = `<div class="content">` +
+        (view.you || view.live ? `<p class="you" ${view.you ? "" : "hidden"}>你：${esc(view.you)}</p>` : "") +
+        (view.reply ? `<p class="reply" translate="no">${esc(view.reply)}</p>` : "") +
+        (view.status ? `<p class="status">${esc(view.status)}</p>` : "") + `</div>`;
+    }
+    if (view.live) followLive();
+    bubble.hidden = false;
+    bubble.style.animation = "none";
+    void bubble.offsetWidth;
+    bubble.style.animation = "";
+  }
+
+  bubble.addEventListener("mouseenter", () => window.pywebview.api.bubble_hover(true));
+  bubble.addEventListener("mouseleave", () => window.pywebview.api.bubble_hover(false));
+  bubble.addEventListener("click", (e) => {
+    if (!e.target.closest("button")) window.pywebview.api.open_main();
+  });
+  const langInit = () => window.pywebview.api.ui_language().then(setLang);
+  if (window.pywebview && window.pywebview.api) langInit();
+  else window.addEventListener("pywebviewready", langInit);
+</script>
+</body>
+</html>

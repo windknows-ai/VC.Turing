@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图灵</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <nav class="rail" aria-label="页面">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>图灵</div>
+    <button class="tab" data-view="home">首页</button>
+    <button class="tab" data-view="ai">AI 连接</button>
+    <button class="tab" data-view="persona">人设</button>
+    <button class="tab" data-view="settings">设置</button>
+    <button class="tab" data-view="test">测试</button>
+    <div class="rail-foot">
+      <p>关掉这个窗口后，图灵会在屏幕角落的小圆球里继续听。点小圆球就能回到这里。</p>
+      <button class="btn quiet danger" id="quit">退出图灵</button>
+    </div>
+  </nav>
+
+  <!-- Home: is Turing listening, and what was said -->
+  <section class="view" id="view-home" aria-label="首页">
+    <div class="stage">
+      <div class="orb" id="orb" data-state="stopped" aria-hidden="true">
+        <span class="orb-ring"></span><span class="orb-core"></span>
+      </div>
+      <p class="stage-title" id="stage-title">图灵没有在听</p>
+      <p class="stage-hint" id="stage-hint">点下面的按钮开始。</p>
+      <div class="stage-actions">
+        <button class="btn primary big" id="power">开始聆听</button>
+      </div>
+      <button class="ai-chip" id="ai-chip" data-goto="ai"></button>
+    </div>
+    <div class="log">
+      <h2 class="log-title">对话</h2>
+      <ol class="log-list" id="log" aria-live="polite"></ol>
+      <p class="log-empty" id="log-empty">还没有对话。试着说"嗨图灵，现在几点了"，或者"嗨图灵，屏幕上这个报错是什么意思"。</p>
+      <form class="ask" id="ask">
+        <input class="input" id="ask-text" autocomplete="off" aria-label="打字给图灵下指令"
+               placeholder="打字给图灵下指令，比如：打开记事本">
+        <button class="btn primary" id="ask-send" type="submit">发送</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- AI connections -->
+  <section class="view" id="view-ai" aria-label="AI 连接">
+    <header class="top">
+      <h1>图灵用哪个 AI</h1>
+      <ol class="flow" id="flow" aria-label="你说的话会经过这些步骤">
+        <li class="node local"><span class="node-name">麦克风</span><span class="node-where">本机</span></li>
+        <li class="node local"><span class="node-name">听到「嗨，图灵」</span><span class="node-where">本机</span></li>
+        <li class="node local"><span class="node-name">语音转文字</span><span class="node-where">本机</span></li>
+        <li class="node local"><span class="node-name">本地指令</span><span class="node-where">本机，免费</span></li>
+        <li class="node ai" id="flow-ai"><span class="node-name">AI</span><span class="node-where">未开启</span></li>
+      </ol>
+      <p class="flow-note">打开软件、调音量、播放暂停这类指令在本机直接完成。只有本地指令听不懂的话，才会以文字发给你在这里选的 AI。你让图灵看屏幕时，那一刻的截图也会发给这个 AI；选 Ollama 本地模型的话，截图不会离开你的电脑。</p>
+    </header>
+    <div class="body">
+      <nav class="sources" id="sources" aria-label="AI 来源"></nav>
+      <main class="detail" id="detail" tabindex="-1"><p class="loading">正在读取设置…</p></main>
+    </div>
+  </section>
+
+  <!-- Personas: saved custom instructions -->
+  <section class="view" id="view-persona" aria-label="人设">
+    <div class="test">
+      <h1>人设</h1>
+      <p class="lede">给图灵设定角色、回答风格和要求。可以存好几套，随时切换。只对接入 AI 后的回答生效。</p>
+      <div class="persona-layout">
+        <div class="persona-list" id="persona-list" role="listbox" aria-label="人设列表"></div>
+        <div class="persona-edit">
+          <label class="field"><span>名字</span><input class="input" id="p-name" maxlength="20"></label>
+          <label class="field"><span>角色</span>
+            <input class="input" id="p-role" placeholder="比如：一位耐心的老师；留空就是图灵自己"></label>
+          <label class="field"><span>回答风格</span>
+            <textarea class="input" id="p-style" rows="3" placeholder="比如：先说结论，再举一个生活中的例子"></textarea></label>
+          <label class="field"><span>行为要求</span>
+            <textarea class="input" id="p-rules" rows="3" placeholder="比如：遇到专业名词顺带解释；不要主动推荐购物"></textarea></label>
+          <div class="row">
+            <button class="btn primary" id="p-use">保存并使用</button>
+            <button class="btn" id="p-save">只保存</button>
+            <button class="btn" id="p-new">新建</button>
+            <button class="btn quiet danger" id="p-delete">删除</button>
+          </div>
+          <p class="result" id="p-result" hidden></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="view" id="view-settings" aria-label="设置">
+    <div class="test">
+      <h1>设置</h1>
+      <p class="lede">改完马上生效，不用重启。</p>
+
+      <div class="setting">
+        <div class="setting-label"><h2>界面语言</h2>
+          <p>图灵界面显示的语言。图灵说话用你对它说的语言。</p></div>
+        <div class="setting-control">
+          <select class="input" id="s-lang" aria-label="界面语言 Language">
+            <option value="auto">跟随系统</option>
+            <option value="zh" translate="no">中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+
+      <h2 class="group">叫醒和对话</h2>
+      <div class="setting">
+        <div class="setting-label"><h2>叫醒灵敏度</h2>
+          <p>叫不醒就调高；没叫它却自己醒了就调低。可以说"嗨图灵""Hey 图灵"，或者在一句话开头直接说"图灵"。</p></div>
+        <div class="setting-control">
+          <input type="range" id="s-sensitivity" min="1" max="5" step="1" aria-label="叫醒灵敏度">
+          <div class="scale"><span>不容易醒</span><span>适中</span><span>很容易醒</span></div>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>说完后等多久</h2>
+          <p>停顿超过这个时间就算说完了。话说到一半（比如"然后"）时会自动多等一会儿。</p></div>
+        <div class="setting-control">
+          <input type="range" id="s-end" min="0.4" max="2" step="0.1" aria-label="说完后等多久">
+          <div class="scale"><span>反应快</span><span id="s-end-value"></span><span>不打断我</span></div>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>连续对话</h2>
+          <p>图灵回答后，这段时间内你可以直接接着说，不用再喊"图灵"。</p></div>
+        <div class="setting-control">
+          <select class="input" id="s-follow" aria-label="连续对话">
+            <option value="0">关闭，每次都要喊</option>
+            <option value="5">5 秒</option>
+            <option value="8">8 秒</option>
+            <option value="15">15 秒</option>
+            <option value="30">30 秒</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>插话打断</h2>
+          <p>图灵说话或思考时，你直接开口它就停下来听你说。</p></div>
+        <div class="setting-control">
+          <label class="switch"><input type="checkbox" id="s-barge">
+            <span>允许打断图灵<br><span class="muted small">用外放音箱时，如果图灵老是自己打断自己，就关掉这个。</span></span></label>
+        </div>
+      </div>
+
+      <h2 class="group">识别</h2>
+      <div class="setting">
+        <div class="setting-label"><h2>语音识别</h2>
+          <p>自动：平时用快的；听到英文（中英混说）时换更准的再听一遍。</p></div>
+        <div class="setting-control">
+          <select class="input" id="s-asr" aria-label="语音识别">
+            <option value="auto">自动（推荐）</option>
+            <option value="sensevoice">只用快的（SenseVoice）</option>
+            <option value="qwen3">只用准的（Qwen3-ASR，每句慢约 1 秒）</option>
+          </select>
+          <p class="muted small" id="s-asr-note" hidden>更准的识别模型还没下载，现在都用快的。下载：在图灵文件夹里运行 <code translate="no">.venv\Scripts\python -m turing.models qwen3-asr</code>（约 840 MB），然后重启图灵。</p>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>常用词</h2>
+          <p>联系人名字、常用软件名等，写在这里更容易听对。用逗号隔开。</p></div>
+        <div class="setting-control">
+          <div class="row"><input class="input" id="s-hotwords" placeholder="比如：土豆，Discord，奥克维尔">
+            <button class="btn" id="s-hotwords-save">保存</button></div>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>麦克风</h2>
+          <p>换了耳机或麦克风，图灵会自动跟着系统默认设备走。</p></div>
+        <div class="setting-control">
+          <select class="input" id="s-mic" aria-label="麦克风"></select>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>保留录音</h2>
+          <p>在这台电脑上保存最近 30 条指令的录音，方便排查听错的问题。不会上传。</p></div>
+        <div class="setting-control">
+          <label class="switch"><input type="checkbox" id="s-recordings"><span>保留最近的录音</span></label>
+        </div>
+      </div>
+
+      <h2 class="group">回答</h2>
+      <div class="setting">
+        <div class="setting-label"><h2>图灵的声音</h2><p>在线声音更自然；离线声音不需要联网。</p></div>
+        <div class="setting-control">
+          <div class="row">
+            <select class="input" id="s-voice" aria-label="声音">
+              <option value="edge">在线声音（推荐）</option>
+              <option value="sapi">离线声音（Windows 自带）</option>
+            </select>
+            <button class="btn" id="speak">试听</button>
+          </div>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>所在城市</h2>
+          <p>问天气时没说城市，就查这里。留空就按网络位置判断。</p></div>
+        <div class="setting-control">
+          <div class="row">
+            <input class="input" id="city" placeholder="比如：奥克维尔、Oakville、北京" aria-label="所在城市">
+            <button class="btn" id="city-save">保存并查天气</button>
+          </div>
+          <p class="result" id="city-result" hidden></p>
+        </div>
+      </div>
+
+      <h2 class="group">运行</h2>
+      <div class="setting">
+        <div class="setting-label"><h2>关闭窗口时</h2></div>
+        <div class="setting-control">
+          <select class="input" id="s-close" aria-label="关闭窗口时">
+            <option value="1">收到小圆球里，继续听</option>
+            <option value="0">彻底退出图灵</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>开机自动启动</h2><p>开机后图灵以小圆球的样子待在屏幕角落。</p></div>
+        <div class="setting-control">
+          <label class="switch"><input type="checkbox" id="s-autostart"><span>开机时启动图灵</span></label>
+        </div>
+      </div>
+      <div class="setting">
+        <div class="setting-label"><h2>重启图灵</h2><p>遇到听不见、没反应时试试。设置和最近的对话都会保留。</p></div>
+        <div class="setting-control"><button class="btn" id="restart">重启图灵</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Test panel -->
+  <section class="view" id="view-test" aria-label="测试">
+    <div class="test">
+      <h1>测试</h1>
+      <p class="lede">图灵听不清、听不懂的时候，在这里检查。</p>
+
+      <div class="setting">
+        <div class="setting-label">
+          <h2>麦克风</h2>
+          <p>录 4 秒，看看图灵听到了什么。</p>
+        </div>
+        <div class="setting-control">
+          <div class="row">
+            <button class="btn" id="record">录 4 秒试试</button>
+            <span class="meter" aria-hidden="true"><span id="meter-fill"></span></span>
+          </div>
+          <p class="result" id="record-result" hidden></p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

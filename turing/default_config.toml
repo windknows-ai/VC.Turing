@@ -1,0 +1,101 @@
+# Turing 配置文件 / Turing configuration
+# 改完保存，重启图灵后生效。 Restart Turing after editing.
+
+[wake]
+# 唤醒词。中文写汉字，英文写单词，也可以中英混写。可以写多个。
+# 单独的"图灵"只在一句话开头才算（前面要有停顿），聊天中间提到不会唤醒。
+# Wake words: Chinese, English or mixed. A bare "图灵" only counts at the start of what you say.
+keywords = ["嗨图灵", "嘿图灵", "图灵", "Hi 图灵", "Hey 图灵", "Hey Turing", "Hi Turing"]
+# 灵敏度 1（不容易醒）到 5（很容易醒）。叫不醒就调高；没叫它却醒了就调低。
+# Sensitivity 1 (hard to wake) to 5 (easy). Raise it if Turing misses you, lower it if it wakes by itself.
+sensitivity = 4
+
+[listen]
+# 唤醒后等你开口的最长时间（秒）。 Seconds to wait for you to start talking.
+wait_seconds = 5.0
+# 叫完名字后停顿多久，图灵就回一句"我在"（秒）。一口气说完指令则不会回应。
+# Pause after the wake word before Turing answers "Yes?". Say it all in one breath to skip it.
+prompt_after_seconds = 0.6
+# 图灵说话时你可以直接插话打断它。用外放音箱时如果它老是自己打断自己，改成 false。
+# Talk over Turing to interrupt it. Set to false if, on speakers, it keeps cutting itself off.
+barge_in = true
+prompt_zh = ["我在", "你说", "嗯，我在"]
+prompt_en = ["Yes?", "I'm listening."]
+# 说完后停顿多久算一句话结束（秒）。话说到一半（比如"然后"）时会自动多等一会儿。
+# Pause that ends a command; longer automatically when you trail off mid-sentence.
+end_silence_seconds = 0.8
+# 图灵回答后，接着听你说下一句多久（秒），这段时间里不用再喊"图灵"。0 = 每次都要喊。
+# After answering, keep listening this long for a follow-up without the wake word. 0 = off.
+follow_up_seconds = 8
+# 让 Qwen3-ASR 更容易听对的词，比如联系人名字、常用软件名。
+# Words Qwen3-ASR should favour, e.g. contact names and apps you use.
+hotwords = []
+# 一条指令最长多少秒。 Longest command, in seconds.
+max_command_seconds = 15.0
+# 语音识别：auto = 先用快的，听到英文再用更准的 Qwen3-ASR；sensevoice = 只用快的；qwen3 = 只用准的。
+# Speech recognizer: auto (fast, re-checked by Qwen3-ASR when English is heard), sensevoice, qwen3.
+asr = "auto"
+# 在本机保留最近 30 条指令的录音，用来排查识别问题（不会上传）。
+# Keep the last 30 commands' audio on this PC to diagnose recognition (never uploaded).
+keep_recordings = true
+# 麦克风编号，留空用系统默认。运行 `python -m turing --devices` 查看。
+# Microphone index; leave empty for the system default.
+device = ""
+
+[voice]
+# edge = 微软在线语音，自然（需要联网）；sapi = Windows 自带离线语音。
+# edge = natural online voice (needs internet); sapi = offline Windows voice.
+engine = "edge"
+zh = "zh-CN-YunxiNeural"
+en = "en-US-GuyNeural"
+rate = "+10%"
+
+[ai]
+# 由设置向导填写：python -m turing --setup。 Filled in by the setup wizard.
+# provider: claude / deepseek / qwen / kimi / glm / ollama / custom / none
+provider = ""
+model = ""
+# 留空用默认地址。 Leave empty for the provider's default address.
+base_url = ""
+# API Key 不写在这里，保存在 Windows 凭据管理器。 API keys are kept in Windows Credential Manager.
+
+[app]
+# 界面语言：auto = 跟随 Windows；zh = 中文；en = English。图灵说话总是用你对它说的语言。
+# Language of Turing's windows: auto (same as Windows), zh or en. Spoken replies follow your language.
+language = "auto"
+# 关闭主窗口时：true = 收起到屏幕角落的小圆球，图灵继续听；false = 彻底退出图灵。
+# Closing the main window: true = Turing keeps running in the orb; false = quit.
+close_to_orb = true
+
+[weather]
+# 问天气时没说城市，就查这里的城市；留空则按网络位置判断（开着 VPN 时可能不准）。
+# City for weather questions that don't name one; empty = guess from your internet connection.
+city = ""
+
+[web]
+# 搜索引擎，{query} 会被替换成搜索内容。 Search engine; {query} is replaced by the search.
+search_url = "https://www.bing.com/search?q={query}"
+
+[models]
+# 下载 GitHub 模型很慢时可以填镜像前缀，例如 "https://ghfast.top/"。
+# Optional prefix for downloading models through a GitHub mirror.
+mirror = ""
+
+[apps.aliases]
+# 口语叫法 = 开始菜单里的程序名。 Spoken name = name in the Start menu.
+"记事本" = "Notepad"
+"计算器" = "Calculator"
+"画图" = "Paint"
+"设置" = "Settings"
+"终端" = "Terminal"
+"命令行" = "Terminal"
+"谷歌浏览器" = "Google Chrome"
+"chrome" = "Google Chrome"
+"edge" = "Microsoft Edge"
+"火狐" = "Firefox"
+"网易云" = "网易云音乐"
+"vscode" = "Visual Studio Code"
+"vs code" = "Visual Studio Code"
+"word" = "Word"
+"excel" = "Excel"
+"ppt" = "PowerPoint"

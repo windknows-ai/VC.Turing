@@ -164,13 +164,13 @@ class Web(Skill):
             webbrowser.open(url)
         if site.no_app_search:
             return ctx.reply(f"{site.name}电脑版没法直接让我搜索，已在浏览器里打开{site.name}搜索“{query}”的结果",
-                             f"The {site.name} desktop app can't be searched from outside, so I opened "
+                             f"The {site.english} desktop app can't be searched from outside, so I opened "
                              f"its search results for {query} in the browser")
         where = "" if in_app else "在浏览器里"
         # Music: be clear it's a list of results, not playing yet.
         tail = ("，点一下就能播放" if ctx.zh else "; click one to play it") if site.name in sites.MUSIC else ""
         return ctx.reply(f"已{where}打开{site.name}搜索“{query}”的结果{tail}",
-                         f"Opened {site.name} search results for {query}{tail}")
+                         f"Opened {site.english} search results for {query}{tail}")
 
     def _ask_bot(self, bot: sites.Site, question: str, ctx: Context) -> str:
         url, _ = sites.link(bot, question)

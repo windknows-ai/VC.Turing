@@ -118,6 +118,11 @@ def _other_language(query: str) -> list[str]:
     return [en if _key(zh) == k else zh for zh, en in _SYSTEM_APPS if k in (_key(zh), _key(en))]
 
 
+def english_name(name: str) -> str:
+    """记事本 -> Notepad, for English replies on Chinese Windows."""
+    return next((en.title() for zh, en in _SYSTEM_APPS if zh == name), name)
+
+
 def find_app(query: str, apps: list[App], aliases: dict[str, str]) -> App | None:
     # Try the alias target and the spoken name: on Chinese Windows "记事本" is listed
     # as 记事本, on English Windows as Notepad.
@@ -285,16 +290,16 @@ class Apps(Skill):
 
             return ctx.reply(TRAY_HINT_ZH, TRAY_HINT_EN)
         if switched:
-            return ctx.reply(f"已切换到{app.name}", f"Switched to {app.name}")
+            return ctx.reply(f"已切换到{app.name}", f"Switched to {english_name(app.name)}")
         # A browser with several profiles opens at "Who's using Chrome?"; go straight
         # into the last one used, as the browser itself would on a link.
         if (kind := browsers.kind_of(app.name)) and (last := browsers.last_used(kind)):
             if browsers.launch(kind, last):
-                return ctx.reply(f"正在打开{app.name}", f"Opening {app.name}")
+                return ctx.reply(f"正在打开{app.name}", f"Opening {english_name(app.name)}")
         launch(app)
         if wait:
             return self._wait_for_window(app, ctx)
-        return ctx.reply(f"正在打开{app.name}", f"Opening {app.name}")
+        return ctx.reply(f"正在打开{app.name}", f"Opening {english_name(app.name)}")
 
     def _wait_for_window(self, app: App, ctx: Context, seconds: float = 10) -> str:
         """For the AI: wait until the app's window is up and in front, so whatever it types

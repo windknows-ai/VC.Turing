@@ -91,6 +91,9 @@ def holiday(name: str, today: dt.date) -> dt.date | None:
     return None
 
 
+_WEEKDAY_DATE_EN = re.compile(r"^what(?:'s| is) the date (this|next) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)$"
+                              r"|^what date is (this|next) (monday|tuesday|wednesday|thursday|friday|saturday|sunday)$", re.I)
+_DAYS_EN = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 _WEEK = {"一": 0, "二": 1, "三": 2, "四": 3, "五": 4, "六": 5, "日": 6, "天": 6}
 _CITY_TIME = re.compile(r"^(.+?)(?:现在|那边|那里)?(?:是)?几点(?:了|钟)?$|^what time is it in\s+(.+)$|^(?:the )?time in\s+(.+)$", re.I)
 _UNTIL = re.compile(r"^(?:今天)?(?:离|距离|到)?(.+?)(?:还有|还剩)(?:几|多少)天$|^how many days (?:until|till|to)\s+(.+)$", re.I)
@@ -116,6 +119,11 @@ class Calendar(Skill):
             monday = today - dt.timedelta(days=today.weekday()) + dt.timedelta(weeks=weeks)
             d = monday + dt.timedelta(days=_WEEK[m.group(2)])
             return ctx.reply(f"{m.group(1)}周{m.group(2)}是{d.month}月{d.day}日", f"That's {d:%B} {d.day}")
+        if m := _WEEKDAY_DATE_EN.match(text):
+            which, day = [g for g in m.groups() if g]
+            monday = today - dt.timedelta(days=today.weekday()) + dt.timedelta(weeks=which.lower() == "next")
+            d = monday + dt.timedelta(days=_DAYS_EN.index(day.lower()))
+            return ctx.reply(f"{d.month}月{d.day}日", f"{which.capitalize()} {day.capitalize()} is {d:%B} {d.day}")
         if m := _DATE_WEEKDAY.match(text):
             d = self._date(m.group(1), m.group(2), today, future=False)
             if d:
@@ -141,7 +149,7 @@ class Calendar(Skill):
         if days == 0:
             return ctx.reply(f"今天就是{name}！", f"{name.title()} is today!")
         return ctx.reply(f"离{name}还有 {days} 天（{when.year}年{when.month}月{when.day}日，星期{'一二三四五六日'[when.weekday()]}）",
-                         f"{days} days until {name} ({when:%A, %B} {when.day})")
+                         f"{days} days until {name[:1].upper() + name[1:]} ({when:%A, %B} {when.day})")
 
     def tools(self) -> list[Tool]:
         return [Tool("time_in_city", "Current local time in a big city (Beijing, London, Tokyo, Toronto…).",

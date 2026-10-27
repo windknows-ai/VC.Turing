@@ -183,4 +183,4 @@ class Clock(Skill):
             day_en = {0: "today", 1: "tomorrow"}.get((at.date() - dt.date.today()).days, f"{at:%b %d}")
             return ctx.reply(f"好的，{day}{at.hour}点{at.minute:02d}分提醒你（图灵要一直开着才能提醒）",
                              f"OK, I'll remind you {day_en} at {at:%H:%M} (Turing needs to keep running)")
-        return ctx.reply(f"好的，{label}后提醒你", f"OK, {label} timer started")
+        return ctx.reply(f"好的，{label}后提醒你", f"OK, timer set for {label}")

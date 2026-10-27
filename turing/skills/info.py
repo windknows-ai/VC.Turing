@@ -71,11 +71,17 @@ def coin(coin_id: str) -> dict:
 
 
 def headlines(topic: str = "", zh: bool = True, limit: int = 5) -> list[str]:
-    q = topic.strip() or ("新闻" if zh else "news")
-    url = (f"https://www.bing.com/news/search?q={urllib.parse.quote(q)}&format=rss"
-           f"&setlang={'zh-CN' if zh else 'en-CA'}")
+    q = topic.strip()
+    if zh:
+        url = f"https://www.bing.com/news/search?q={urllib.parse.quote(q or '新闻')}&format=rss&setlang=zh-CN"
+    else:
+        # Bing answers most English queries (even "news") with a web page instead of a feed.
+        url = ("https://news.google.com/rss" + (f"/search?q={urllib.parse.quote(q)}&" if q else "?")
+               + "hl=en-CA&gl=CA&ceid=CA:en")
     data = urllib.request.urlopen(urllib.request.Request(url, headers=_HEADERS), timeout=10).read()
     titles = [re.sub(r"\s+", " ", i.findtext("title") or "").strip() for i in ET.fromstring(data).findall(".//item")]
+    if not zh:
+        titles = [re.sub(r" - [^-]+$", "", t) for t in titles]  # "… - CBC News": the source isn't worth saying
     return [t for t in titles if t][:limit]
 
 
@@ -95,7 +101,7 @@ class Info(Skill):
             return self.quote(STOCKS[next(g for g in m.groups() if g).lower()], ctx)
         if m := _COIN.search(text):
             return self.crypto(COINS[next(g for g in m.groups() if g).lower()], ctx)
-        if (m := _NEWS.match(text)) and len(text) <= 20:
+        if (m := _NEWS.match(text)) and len(text) <= (20 if re.search(r"[一-鿿]", text) else 40):
             topic = next((g for g in m.groups() if g), "") or ""
             return self.news(re.sub(r"^(?:关于|有关)", "", topic), ctx)
         return None

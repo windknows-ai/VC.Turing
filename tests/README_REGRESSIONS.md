@@ -72,6 +72,8 @@ ones back into the code one at a time and checks that a test fails for each.
 | 63 | The translation test stopped checking after any `translate="no"` tag but `<option>` | `test_regressions::_Texts` keeps a stack of those tags |
 | 64 | `python -m turing --text` crashed at the end of piped input | `__main__` catches EOFError |
 | 65 | No way to get the optional Qwen3-ASR model on a new install | `python -m turing.models qwen3-asr`; the settings page says so |
+| 66 | English questions turned away by length limits sized for Chinese (battery, news); "next desktop", "what's the date next Friday" not understood; English news fetch got a web page | `test_regressions::test_english_questions_as_long_as_the_chinese_ones_are_understood` |
+| 67 | English replies said "Opening 记事本", "B站", "call you alex" | `test_regressions::test_english_replies_use_english_names` |
 
 Not caused by Turing, fixed on the PC: the AMD driver memory leak, and Ollama's model folder
 pointing at an unwritable place (its server restarted every second).

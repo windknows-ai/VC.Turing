@@ -450,3 +450,26 @@ def test_everyday_wordings_from_the_readme_are_understood(text, skill, monkeypat
     monkeypatch.setattr(info, "rate", lambda a, b: (7.0, ""))
     s = {"device": device.Device({}), "calendar": calendar.Calendar({}), "info": info.Info({})}[skill]
     assert s.handle(normalize(text), ctx()) is not None
+
+
+@pytest.mark.parametrize("text, skill", [
+    ("how much battery is left", "device"), ("what's the news today", "info"), ("next desktop", "desktops"),
+    ("previous desktop", "desktops"), ("what's the date next friday", "calendar")])
+def test_english_questions_as_long_as_the_chinese_ones_are_understood(text, skill, monkeypatch):
+    """Length limits sized for Chinese (16, 20 characters) turned away the same question in English."""
+    from turing.skills import calendar, desktops, device, info
+
+    monkeypatch.setattr(device.Device, "battery", lambda self, ctx: "battery")
+    monkeypatch.setattr(info.Info, "news", lambda self, topic, ctx: "news")
+    monkeypatch.setattr(desktops.Desktops, "switch", lambda self, where, ctx: "switched")
+    s = {"device": device.Device({}), "calendar": calendar.Calendar({}), "info": info.Info({}),
+         "desktops": desktops.Desktops({})}[skill]
+    assert s.handle(normalize(text), ctx()) is not None
+
+
+def test_english_replies_use_english_names():
+    """English replies said "Opening 记事本" and "Opened B站 search results"."""
+    from turing.skills import apps, sites
+
+    assert apps.english_name("记事本") == "Notepad" and apps.english_name("Spotify") == "Spotify"
+    assert all(s.english.isascii() for s in sites.SITES + sites.BOTS), [s.name for s in sites.SITES if not s.english.isascii()]

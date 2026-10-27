@@ -78,6 +78,8 @@ class Notes(Skill):
             return self.done(next(g for g in m.groups() if g), ctx)
         if m := _CALL_ME.match(text):
             name = next(g for g in m.groups() if g).strip(" 。.")
+            if name.isascii():
+                name = name.title()  # what was heard comes in lower case: "alex" -> "Alex"
             set_user_name(name)
             return ctx.reply(f"好的，以后叫你{name}", f"OK, I'll call you {name}")
         if _WHO_AM_I.match(text):
@@ -110,7 +112,8 @@ class Notes(Skill):
         recent = items[-5:]
         lines = "；".join(f"{n}. {i['text']}" for n, i in enumerate(recent, 1))
         head = ctx.reply(f"一共 {len(items)} 条，" if len(items) > 5 else "", f"{len(items)} in all, " if len(items) > 5 else "")
-        what = ctx.reply("笔记" if kind == "note" else "待办", "notes" if kind == "note" else "to-dos")
+        what = ctx.reply("笔记" if kind == "note" else "待办",
+                         ("notes" if kind == "note" else "to-dos") if len(items) > 5 else ("Notes" if kind == "note" else "To-dos"))
         return ctx.reply(f"{head}{'最近的' if len(items) > 5 else ''}{what}：{lines}。",
                          f"{head}{'latest ' if len(items) > 5 else ''}{what}: {lines}.")
 

@@ -139,7 +139,7 @@ class Messaging(Skill):
                 return ctx.reply(TRAY_HINT_ZH, TRAY_HINT_EN)
             return ctx.reply("没能切换到微信窗口，请把微信打开后再试。",
                              "I couldn't switch to WeChat. Open it and try again.")
-        return ctx.reply(f"已经发给{contact}了。", f"Sent to {contact}.")
+        return ctx.reply(f"已经发给{contact}了。", f"Sent to {contact[:1].upper() + contact[1:]}.")
 
     def tools(self) -> list[Tool]:
         return [Tool(

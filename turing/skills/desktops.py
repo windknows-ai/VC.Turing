@@ -21,8 +21,8 @@ _CN_NUM = {"一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5, "六": 6,
 _SWITCH = re.compile(r"^(?:帮我)?(?:切换到|切换去|切到|切去|转到|跳到|去|换到|回到)\s*(.+?)\s*(?:那个|这个)?\s*(?:虚拟)?桌面$")
 _SWITCH_EN = re.compile(r"^(?:switch|go|move)\s+to\s+(?:the\s+)?(.+?)\s+desktop$"
                         r"|^(?:switch|go)\s+to\s+desktop\s+(.+)$", re.I)
-_NEXT = re.compile(r"^(?:切换到|切到|去)?下一个桌面$|^(?:switch|go) to (?:the )?next desktop$", re.I)
-_PREV = re.compile(r"^(?:切换到|切到|去|回到)?上一个桌面$|^(?:switch|go) (?:back )?to (?:the )?previous desktop$", re.I)
+_NEXT = re.compile(r"^(?:切换到|切到|去)?下一个桌面$|^(?:(?:switch|go) to )?(?:the )?next desktop$", re.I)
+_PREV = re.compile(r"^(?:切换到|切到|去|回到)?上一个桌面$|^(?:(?:switch|go) (?:back )?to )?(?:the )?previous desktop$", re.I)
 _NEW = re.compile(r"^(?:新建|创建|添加|加|开)(?:一个)?(?:新的?)?(?:虚拟)?桌面$|^(?:create|add|make) a new desktop$|^new desktop$", re.I)
 _WHICH = re.compile(r"^(?:我)?现在(?:是)?在(?:哪个|第几个)桌面|^(?:which|what) desktop am i on", re.I)
 

@@ -20,24 +20,29 @@ class Site:
     app_url: str = ""   # link the desktop app itself handles, if installed
     app_protocol: str = ""
     no_app_search: bool = False  # the desktop app exists but can't be told to search
+    en: str = ""        # its name in English replies, if not the same
+
+    @property
+    def english(self) -> str:
+        return self.en or self.name
 
 
 SITES = [
-    Site("抖音", "https://www.douyin.com/search/{query}", ("抖音", "douyin"), no_app_search=True),
-    Site("B站", "https://search.bilibili.com/all?keyword={query}", ("b站", "哔哩哔哩", "bilibili", "bili")),
+    Site("抖音", "https://www.douyin.com/search/{query}", ("抖音", "douyin"), no_app_search=True, en="Douyin"),
+    Site("B站", "https://search.bilibili.com/all?keyword={query}", ("b站", "哔哩哔哩", "bilibili", "bili"), en="Bilibili"),
     Site("YouTube", "https://www.youtube.com/results?search_query={query}", ("youtube", "油管")),
     Site("小红书", "https://www.xiaohongshu.com/search_result?keyword={query}",
-         ("小红书", "rednote", "xiaohongshu")),
-    Site("淘宝", "https://s.taobao.com/search?q={query}", ("淘宝", "taobao")),
-    Site("京东", "https://search.jd.com/Search?keyword={query}", ("京东", "jd")),
-    Site("知乎", "https://www.zhihu.com/search?q={query}", ("知乎", "zhihu")),
-    Site("微博", "https://s.weibo.com/weibo?q={query}", ("微博", "weibo")),
-    Site("百度", "https://www.baidu.com/s?wd={query}", ("百度", "baidu")),
-    Site("谷歌", "https://www.google.com/search?q={query}", ("谷歌", "google")),
-    Site("必应", "https://www.bing.com/search?q={query}", ("必应", "bing")),
+         ("小红书", "rednote", "xiaohongshu"), en="RedNote"),
+    Site("淘宝", "https://s.taobao.com/search?q={query}", ("淘宝", "taobao"), en="Taobao"),
+    Site("京东", "https://search.jd.com/Search?keyword={query}", ("京东", "jd"), en="JD"),
+    Site("知乎", "https://www.zhihu.com/search?q={query}", ("知乎", "zhihu"), en="Zhihu"),
+    Site("微博", "https://s.weibo.com/weibo?q={query}", ("微博", "weibo"), en="Weibo"),
+    Site("百度", "https://www.baidu.com/s?wd={query}", ("百度", "baidu"), en="Baidu"),
+    Site("谷歌", "https://www.google.com/search?q={query}", ("谷歌", "google"), en="Google"),
+    Site("必应", "https://www.bing.com/search?q={query}", ("必应", "bing"), en="Bing"),
     Site("GitHub", "https://github.com/search?q={query}", ("github",)),
-    Site("网易云音乐", "https://music.163.com/#/search/m/?s={query}", ("网易云音乐", "网易云")),
-    Site("QQ音乐", "https://y.qq.com/n/ryqq/search?w={query}", ("qq音乐", "qq music")),
+    Site("网易云音乐", "https://music.163.com/#/search/m/?s={query}", ("网易云音乐", "网易云"), en="NetEase Cloud Music"),
+    Site("QQ音乐", "https://y.qq.com/n/ryqq/search?w={query}", ("qq音乐", "qq music"), en="QQ Music"),
     Site("Spotify", "https://open.spotify.com/search/{query}", ("spotify", "声破天"),
          app_url="spotify:search:{query}", app_protocol="spotify"),
     Site("Steam", "https://store.steampowered.com/search/?term={query}", ("steam",),

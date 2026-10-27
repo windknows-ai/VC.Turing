@@ -167,7 +167,7 @@ class Device(Skill):
             return self.brightness(ctx, by=-20)
         if _BRIGHT_QUERY.match(text):
             return self.brightness(ctx)
-        if _BATTERY.search(text) and len(text) <= 16:
+        if _BATTERY.search(text) and len(text) <= (16 if re.search(r"[一-鿿]", text) else 40):
             return self.battery(ctx)
         if _CLIPBOARD.search(text) and re.search(r"读|念|说|是什么|有什么|read|what", text, re.I):
             return self.clipboard(ctx)
